@@ -1,64 +1,19 @@
 # Copyright (C) 2020  Matthew "strager" Glazar
 # See end of file for extended copyright information.
 
-# TODO: Very importart that you test if has async method and if not use normal method
-# TODO: Replace all top-level functions by classes
-# TODO: Create 3 files: utils, cinterface, plugin
-# TODO: self.diags or return?
-# TODO: views = set or list?
-
 import html
 
 import sublime
-from sublime_plugin import ViewEventListener, TextChangeListener
 
-from .interface import aa
-
-
-def is_js(settings):
-    return "JavaScript" in settings.get("syntax", "")
-
-
-class Buffer:
-    """
-# Just for the sake of clarity, you can think of a buffer as a block of memory
-# that contains the file's text and a view as a tab in the sublime text.
-    """
-    def __init__(self, view):
-        self.views = [view]  # TODO: {view} or [view]?
-        self.parser = Parser(view)
-
-
-class BuffersManager:
-    """
-# The internal strategy used is to share information between all views that
-# belong to the same buffer. Because that way, if there are multiple views/tabs
-# of the same buffer/file, they will all apply the same changes (have squiggly
-# underlines and pop-ups available).
-    """
-
-    def __init__(self):
-        self.buffers = {}
-
-    def add_view(self, view):
-        bid = view.buffer_id()
-        if bid not in self.buffers:
-            self.buffers[bid] = Buffer(view)
-        else:
-            self.buffers[bid].views.append(view)
-        return self.buffers[bid]
-
-    def remove_view(self, view):
-        bid = view.buffer_id()
-        self.buffers[bid].views.remove(view)
-        if not self.buffers[bid].views:
-            del self.buffers[bid]
+from .buffer import BuffersManager
+from .interface import Parser
+from .utils import is_js
 
 
 bmanager = BuffersManager()
 
 
-class QljsBaseListener:
+class QljsViewEventListener(ViewEventListener):
     @classmethod
     def is_applicable(cls, settings):
         return Parser.is_working() and is_js(settings)
@@ -67,17 +22,21 @@ class QljsBaseListener:
     def applies_to_primary_view_only(cls):
         return False
 
+    def
+
+
+class QljsBaseListener:
     def __init__(self, view):
-        if view:
-            self.view = view
-            self.buffer = bmanager.add_view(self.view)
+        # TODO: if view: ???
+        self.view = view
+        self.buffer = bmanager.add_view(self.view)
 
     def __del__(self):
-        if hasattr(self, "view"):
-            bmanager.remove_view(self.view)
+        # TODO: if hasattr(self, "view"): ???
+        bmanager.remove_view(self.view)
 
     def add_squiggly_underlines(self):
-        warning_regions, error_regions = self.get_regions_by_severity()
+        error_regions, warning_regions = self.get_regions_by_severity()
         flags = (
             sublime.DRAW_SQUIGGLY_UNDERLINE
             | sublime.DRAW_NO_FILL
@@ -85,6 +44,7 @@ class QljsBaseListener:
         )
         for view in self.buffer.views:
             view.add_regions("2", warning_regions, "region.orangish", "", flags)
+            # TODO: Error regions can overlay warning regions.
             view.add_regions("1", error_regions, "region.redish", "", flags)
 
     def remove_squiggly_underlines(self):
@@ -93,105 +53,108 @@ class QljsBaseListener:
             view.erase_regions("1")
 
     def get_regions_by_severity(self):
-        warning_regions = []
         error_regions = []
+        warning_regions = []
         for diagnostic in self.buffer.parser.diagnostics:
-            if Severity.warning == diagnostic.severity:
-                warning_regions.append(diagnostic.region)
-            elif Severity.error == diagnostic.severity:
+            if diagnostic.severity == Severity.error:
                 error_regions.append(diagnostic.region)
-        return warning_regions, error_regions
+            elif diagnostic.severity == Severity.warning:
+                warning_regions.append(diagnostic.region)
+        return error_regions, warning_regions
+
+
+class QljsBaseViewEventListener(QljsBaseListener):
+    @classmethod
+    def is_applicable(cls, settings):
+        return QljsBaseListener.is_applicable(cls, settings)
+
+    @classmethod
+    def applies_to_primary_view_only(cls):
+        return QljsBaseListener.applies_to_primary_view_only(cls)
+
+    def __init__(self, view):
+        QljsBaseListener.__init__(self, view)
+        self.on_load()
+
+    def on_load(self):
+        try:
+            self.buffer.parser.set_text()
+            self.buffer.parser.lint()
+            self.add_squiggly_underlines(self.buffer.parser.diagnostics)
+        except ParserError as error:
+            self.remove_squiggly_underlines()
+            try:
+                error.display_message()
+            except ParserMessageError as error:
+                pass
+
+    def on_reload(self):
+        self.on_load()
+
+    def on_revert(self):
+        self.on_load()
+
+    def on_hover(self, point, hover_zone):
+        if hover_zone == sublime.HOVER_TEXT:
+            for diagnostic in self.buffer.parser.diagnostics:
+                # If the user hovers over the diagnostic region
+                # (region with squiggly underlines).
+                if diagnostic.region.contains(point):
+                    self.add_popup(diagnostic)
+
+    def add_popup(self, diagnostic):
+        minihtml = """
+        <body style="margin: 0.8rem;">
+            <div>%s</div>
+            <div style="color: %s;">quick-lint-js(%s)</div>
+        </body>
+        """
+        color = self.view.style_for_scope("comment.line")["foreground"]
+        content = minihtml % (
+            html.escape(diagnostic.message),
+            html.escape(color),
+            html.escape(diagnostic.code),
+        )
+
+        flags = sublime.HIDE_ON_MOUSE_MOVE_AWAY
+        location = diagnostic.region.begin()
+        max_width, max_height = (1280, 720)  # 1280x720 Screen Resolution
+        self.view.show_popup(content, flags, location, max_width, max_height)
 
 
 if interface.has_incremental_changes():
 
+    from sublime_plugin import ViewEventListener, TextChangeListener
+
     class QljsViewEventListener(QljsBaseListener, ViewEventListener):
-        @classmethod
-        def is_applicable(cls, settings):
-            return QljsBaseListener.is_applicable(cls, settings)
+        pass
 
-        @classmethod
-        def applies_to_primary_view_only(cls):
-            return QljsBaseListener.applies_to_primary_view_only(cls)
 
-        def __init__(self, view):
-            QljsBaseListener.__init__(self, view)
-            ViewEventListener.__init__(self, view)
-            self.on_load()
-
-        def on_load(self):
-            try:
-                self.buffer.parser.set_text()
-                self.buffer.parser.lint()
-                self.add_squiggly_underlines()
-            except Error as error:
-                self.remove_squiggly_underlines()
-                if error.has_message():
-                    error.display_message()
-
-        def on_reload(self):
-            self.on_load()
-
-        def on_revert(self):
-            self.on_load()
-
-        def on_hover(self, point, hover_zone):
-            if hover_zone == sublime.HOVER_TEXT:
-                for diagnostic in self.buffer.parser.diagnostics:
-                    # If the user hovers over the diagnostic region
-                    # (region with squiggly underlines).
-                    if diagnostic.region.contains(point):
-                        self.add_popup(diagnostic)
-
-        def add_popup(self, diagnostic):
-            minihtml = """
-            <body style="margin: 0.8rem;">
-                <div>%s</div>
-                <div style="color: %s;">quick-lint-js(%s)</div>
-            </body>
-            """
-            color = self.view.style_for_scope("comment.line")["foreground"]
-            content = minihtml % (
-                html.escape(diagnostic.message),
-                html.escape(color),
-                html.escape(diagnostic.code),
-            )
-
-            flags = sublime.HIDE_ON_MOUSE_MOVE_AWAY
-            location = diagnostic.region.begin()
-            max_width, max_height = (1280, 720)  # 1280x720 Screen Resolution
-            self.view.show_popup(content, flags, location, max_width, max_height)
-
-    class QljsTextChangeListener(TextChangeListener, QljsBaseListener):
+    class QljsTextChangeListener(QljsBaseListener, TextChangeListener):
         @classmethod
         def is_applicable(cls, buffer):
-            if not Parser.is_working():
-                return False
             settings = buffer.primary_view().settings()
-            syntax = settings.get("syntax", "")
-            return "JavaScript.sublime-syntax" in syntax
+            return QljsBaseListener.is_applicable(cls, settings)
 
         def __init__(self):
-            TextChangeListener.__init__(self)
             QljsBaseListener.__init__(self, None)
+            TextChangeListener.__init__(self)
 
         def on_text_changed(self, changes):
-            self.buffer = (
-                bmanager.get_buffer(
-                    self.buffer.id()
-                )
-            )
+            self.buffer = bmanager.get_buffer(self.buffer.id())
             try:
                 for change in changes:
                     self.buffer.parser.replace_text(change)
                 self.buffer.parser.lint()
                 self.add_squiggly_underlines()
-            except Error as error:
+            except ParserError as error:
                 self.remove_squiggly_underlines()
                 if error.has_message():
                     error.display_message()
 
 else:
+
+    from sublime_plugin import ViewEventListener
 
     class QljsListener(ViewEventListener):
         @classmethod
@@ -278,7 +241,6 @@ else:
             location = diagnostic.region.begin()
             max_width, max_height = (1280, 720)  # 1280x720 Screen Resolution
             self.view.show_popup(content, flags, location, max_width, max_height)
-
 
 
 
