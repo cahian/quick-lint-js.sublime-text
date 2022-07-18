@@ -39,11 +39,11 @@ class EngineViewEventListener(ViewEventListener):
     def on_clone_async(self):
         main.on_clone_async(self.view)
 
-    def on_post_save(self):
-        main.on_post_save(self.view)
+    def on_post_save_async(self):
+        main.on_post_save_async(self.view)
 
-    def on_hover(self):
-        main.on_hover(self.view)
+    def on_hover(self, point, hover_zone):
+        main.on_hover(self.view, point, hover_zone)
 
 
 class EngineTextChangeListener(TextChangeListener):
@@ -54,4 +54,4 @@ class EngineTextChangeListener(TextChangeListener):
         return is_javascript(settings)
 
     def on_text_changed_async(changes):
-        pass
+        main.on_text_changed_async(this.buffer, changes)
