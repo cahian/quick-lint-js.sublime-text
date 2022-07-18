@@ -2,6 +2,18 @@ from .underlines import add_underlines
 from .popup import add_popup
 
 
+class QuickLintJsListener:
+    pass
+
+
+def on_init(buffers):
+    pass
+
+
+def on_close(buffer):
+    buffer.close()
+
+
 # TODO: Before send buffer, update diagnostics or not.
 def on_load(buffer):
     views = buffer.views()
@@ -9,15 +21,11 @@ def on_load(buffer):
     add_underlines(views, diagnostics)
 
 
-def on_unload(buffer):
-    buffer.close()
-
-
-def on_modify(buffer):
+def on_modify(buffer, change):
     on_load(buffer)
-#     views = buffer.views()
-#     diagnostics = buffer.diagnostics()
-#     add_underlines(views, diagnostics)
+    views = buffer.views()
+    diagnostics = buffer.diagnostics_from_change(change)
+    add_underlines(views, diagnostics)
 
 
 def on_clone(buffer, view):
