@@ -2,10 +2,10 @@ from .underlines import add_underlines
 from .popup import add_popup
 
 
+# TODO: Before send buffer, update diagnostics or not.
 def on_load(buffer):
     views = buffer.views()
     diagnostics = buffer.diagnostics()
-    diagnostics.update()
     add_underlines(views, diagnostics)
 
 
@@ -13,14 +13,11 @@ def on_unload(buffer):
     buffer.close()
 
 
-def on_modify(buffer, change):
-    views = buffer.views()
-    diagnostics = buffer.diagnostics()
-    if change:
-        diagnostics.update_from_change(change)
-    else:
-        diagnostics.update()
-    add_underlines(views, diagnostics)
+def on_modify(buffer):
+    on_load(buffer)
+#     views = buffer.views()
+#     diagnostics = buffer.diagnostics()
+#     add_underlines(views, diagnostics)
 
 
 def on_clone(buffer, view):

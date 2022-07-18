@@ -3,7 +3,7 @@ class Diagnostics:
         self._data = []
         self.view = view
 
-    def get():
+    def __get__():
         pass
 
     def update():
