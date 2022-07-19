@@ -9,3 +9,5 @@
 # TODO: Resolver o bug que foi descrito no Pull Request
 
 # Dê suporte primeiro pro sublime text 4, quando 4 tiver funcionando, dê suporte para o 3
+
+# Adicione as licênsas no inicio e no fim de cada arquivo

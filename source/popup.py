@@ -4,15 +4,17 @@ from sublime import HIDE_ON_MOUSE_MOVE_AWAY
 
 
 def add_popup(view, diagnostic):
+
+    message = diagnostic.message
+    code = diagnostic.code
+    color = view.style_for_scope("comment.line")["foreground"]
+
     minihtml = """
     <body style="margin: 0.8rem;">
         <div>%s</div>
         <div style="color: %s;">quick-lint-js(%s)</div>
     </body>
     """
-    message = diagnostic.message
-    color = view.style_for_scope("comment.line")["foreground"]
-    code = diagnostic.code
     content = minihtml % (escape(message), escape(color), escape(code))
 
     flags = HIDE_ON_MOUSE_MOVE_AWAY

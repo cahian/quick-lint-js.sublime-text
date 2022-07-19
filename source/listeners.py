@@ -3,7 +3,11 @@
 from sublime_plugin import EventListener, ViewEventListener, TextChangeListener
 
 from . import main
-from .utils import is_javascript, remove_duplicates
+from .utils import remove_duplicates
+
+
+class BufferEventListener:
+    pass
 
 
 class EngineEventListener(EventListener):
