@@ -12,11 +12,13 @@ class QuickLintJsBufferEventListener(BufferEventListener):
     def is_applicable(cls, settings):
         return is_javascript(settings)
 
-    def __init__(self, buffer):
-        super().__init__(buffer)
+    def on_init(self):
         self.document = Document()
 
-    def on_init(self):
+    def on_exit(self):
+        self.document.close()
+
+    def on_load_async(self):
         try:
             views = self.buffer.views()
             diagnostics = self.document.lint_from_buffer(self.buffer)
@@ -28,18 +30,6 @@ class QuickLintJsBufferEventListener(BufferEventListener):
                 pass
         finally:
             remove_underlines()
-
-    def on_exit(self):
-        self.document.close()
-
-    def on_load_async(self):
-        self.on_init()
-
-    def on_reload_async(self):
-        self.on_init()
-
-    def on_revert_async(self):
-        self.on_init()
 
     def on_clone_async(self, view):
         try:
@@ -118,4 +108,11 @@ class QuickLintJsBufferEventListener(BufferEventListener):
     #         self.on_exit()
 
     # def on_post_save_async(self):
+    #     self.on_init()
+
+
+    # def on_reload_async(self):
+    #     self.on_init()
+
+    # def on_revert_async(self):
     #     self.on_init()
