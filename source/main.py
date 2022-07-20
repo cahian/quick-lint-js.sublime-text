@@ -7,7 +7,6 @@ from .utilities.popup import add_popup
 from .utilities.syntax import is_javascript
 
 
-# TODO: Reduce code repetition.
 class QuickLintJsBufferEventListener(BufferEventListener):
     @classmethod
     def is_applicable(cls, settings):
@@ -23,7 +22,8 @@ class QuickLintJsBufferEventListener(BufferEventListener):
     def on_load_async(self):
         views = self.buffer.views()
         self.document.full_update(self.buffer)
-        self._show_underlines()
+        diagnostics = self.document.lint()
+        add_underlines(views, diagnostics)
 
     def on_reload_async(self):
         self.on_load_async()
@@ -35,12 +35,14 @@ class QuickLintJsBufferEventListener(BufferEventListener):
         self.on_load_async()
 
     def on_clone_async(self, view):
-        self._show_underlines()
+        diagnostics = self.document.diagnostics()
+        add_underlines([view], diagnostics)
 
     def on_text_changed_async(self, changes):
         views = self.buffer.views()
         self.document.incremental_update(changes)
-        self._show_underlines()
+        diagnostics = self.document.lint()
+        add_underlines(views, diagnostics)
 
     def on_hover(self, point, hover_zone):
         if hover_zone == HOVER_TEXT:
@@ -50,18 +52,6 @@ class QuickLintJsBufferEventListener(BufferEventListener):
                 # (region with underlines).
                 if diagnostic.region.contains(point):
                     add_popup(view, diagnostic)
-
-    def _show_underlines(self, views, diagnostics):
-        try:
-            diagnostics = self.document.lint()
-            add_underlines(views, diagnostics)
-        except DocumentError as docerror:
-            try:
-                docerror.display_message()
-            except:
-                pass
-        finally:
-            remove_underlines()
 
 
 # def on_init(buffers):
@@ -114,3 +104,17 @@ class QuickLintJsBufferEventListener(BufferEventListener):
 
     # def on_revert_async(self):
     #     self.on_init()
+
+
+# TODO: Reduce code repetition.
+    # def _show_underlines(self, views, diagnostics):
+    #     try:
+    #         diagnostics = self.document.lint()
+    #         add_underlines(views, diagnostics)
+    #     except DocumentError as docerror:
+    #         try:
+    #             docerror.display_message()
+    #         except:
+    #             pass
+    #     finally:
+    #         remove_underlines()
