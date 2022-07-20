@@ -1,67 +1,47 @@
-"""This modules calls QuickLintJsListener methods pipipi popopo"""
-
-
-from os.path import basename, dirname, realpath, splitext, join, isfile
-from glob import glob
-from importlib import import_module
-from inspect import getmembers, isclass
-
 from sublime_plugin import EventListener, ViewEventListener, TextChangeListener
 
-from .list import remove_duplicates
+from .listeners import BufferEventListener
 
 
-__dirname__ = dirname(__file__)
+class BufferEventEmitter:
+    listeners = {}
 
+    def on_init(self, buffers):
+        for buffer in buffers:
+            id = buffer.id()
+            if not listeners[id]:
+                listeners[id] = BufferEventListener(buffer)
+                listeners[id].on_init()
 
-def getmodname(path):
-    return basename(path)[:-3]
+    def on_exit(self, buffer):
+        id = buffer.id()
+        if listeners[id]:
+            listeners[id].on_exit()
+            del listeners[id]
 
+    def on_load_async(self, buffer):
+        id = buffer.id()
+        if not listeners[id]:
+            listeners[id] = BufferEventListener(buffer)
+        listeners[id].on_load_async()
 
-def ismodname(path):
-    return entry[-3:] == ".py"
+    def on_clone_async(self, buffer, view):
+        id = buffer.id()
+        if not listeners[id]:
+            listeners[id] = BufferEventListener(buffer)
+        listeners[id].on_clone_async(view)
 
+    def on_text_changed_async(self, buffer, changes):
+        id = buffer.id()
+        if not listeners[id]:
+            listeners[id] = BufferEventListener(buffer)
+        listeners[id].on_text_changed_async(changes)
 
-def listmod(path):
-    for entry in listdir(path):
-        if isfile(entry) and ismodname(entry):
-            yield modname(entry)
-
-
-def import_modules_from_directory(directory):
-    for modname in listmod(directory):
-        yield import_module(modname)
-
-
-def import_modules_from_directory(dir):
-    modules = []
-    for filename in glob(join(directory, "*.py")):
-        modulename = splitext(basename(filename))[0]
-        if isfile(filename) and modulename != __name__:
-            modules.append(import_module(modulename))
-
-    for entry in listdir(dir):
-        if entry
-    return modules
-
-
-def get_listeners(modules):
-    listeners = []
-    for module in modules:
-        for name, object in getmembers(module):
-            if isclass(object) and issubclass(object, BufferEventListener) and BufferEventListener != object:
-                listeners.append(object)
-    return listeners
-
-
-LISTENERS = []
-
-
-class BufferEventListener:
-    pass
-
-
-# Here we will listen the Sublime Text events and emits them again. # to BufferEventListeners.
+    def on_hover(self, buffer, point, hover_zone):
+        id = buffer.id()
+        if not listeners[id]:
+            listeners[id] = BufferEventListener(buffer)
+        listeners[id].on_hover(point, hover_zone)
 
 
 class EventEmitter(EventListener):
@@ -73,7 +53,7 @@ class EventEmitter(EventListener):
     def on_init(self, views):
         views = [view for view in views if self.is_applicable(view)]
         buffers = remove_duplicates([view.buffer() for view in views])
-        main.on_init(buffers)
+        bele.emit("on_init", buffers)
 
 
 class ViewEventEmitter(ViewEventListener):
@@ -113,3 +93,9 @@ class TextChangeEmitter(TextChangeListener):
 
     def on_text_changed_async(changes):
         main.on_text_changed_async(this.buffer, changes)
+
+
+# """
+# An Emitter can both listen to events and emit events.
+# A Listener can only listen to events.
+# """

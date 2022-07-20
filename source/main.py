@@ -1,10 +1,10 @@
 from sublime import HOVER_TEXT
 
-from .listeners import BufferEventListener
-from .interface import Document
-from .underlines import add_underlines, remove_underlines
-from .popup import add_popup
-from .syntax import is_javascript
+from .events.listeners import BufferEventListener
+from .interface.interface import Document
+from .utilities.underlines import add_underlines, remove_underlines
+from .utilities.popup import add_popup
+from .utilities.syntax import is_javascript
 
 
 # TODO: Reduce code repetition.
@@ -44,7 +44,7 @@ class QuickLintJsBufferEventListener(BufferEventListener):
         finally:
             remove_underlines()
 
-    def on_text_changed_async(self, change):
+    def on_text_changed_async(self, changes):
         try:
             views = self.buffer.views()
             diagnostics = self.document.lint_from_changes(changes)
