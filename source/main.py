@@ -32,6 +32,12 @@ class QuickLintJsBufferEventListener(BufferEventListener):
         finally:
             remove_underlines()
 
+    def on_reload_async(self):
+        self.on_load_async()
+
+    def on_revert_async(self):
+        self.on_load_async()
+
     def on_clone_async(self, view):
         try:
             diagnostics = self.document.lint_from_view(view)
