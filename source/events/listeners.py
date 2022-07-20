@@ -1,5 +1,6 @@
 """The ideia of this modules is to allow the user have a similar experience with the listeners that sublime_plugin provides by
 default."""
+""" """
 
 
 class BufferEventListener:
