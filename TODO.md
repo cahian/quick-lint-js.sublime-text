@@ -11,3 +11,5 @@
 # Dê suporte primeiro pro sublime text 4, quando 4 tiver funcionando, dê suporte para o 3
 
 # Adicione as licênsas no inicio e no fim de cada arquivo
+# Adicione um scripts.py, com os seguintes scripts: format, format:fix, lint, lint:fix, build, start/run, *maybe deploy
+# Organize esse arquivo

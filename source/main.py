@@ -7,6 +7,7 @@ from .popup import add_popup
 from .syntax import is_javascript
 
 
+# TODO: Reduce code repetition.
 class QuickLintJsBufferEventListener(BufferEventListener):
     @classmethod
     def is_applicable(cls, settings):

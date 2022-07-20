@@ -15,8 +15,8 @@ def add_underlines(views, diagnostics):
     flags = DRAW_SQUIGGLY_UNDERLINE | DRAW_NO_FILL | DRAW_NO_OUTLINE
     regions = get_regions_by_severity(diagnostics)
     for view in views:
+        # If warning regions and error regions overlap, error regions must have
+        # priority over warning regions. For this to happen, we add the error
+        # regions after the warning regions.
         view.add_regions("2", regions["warnings"], "region.orangish", "", flags)
-        # If the warning regions and error regions overlap, the error regions
-        # will overwrite the warning ones. Why? Because they are added after the
-        # warning ones.
         view.add_regions("1", regions["errors"], "region.redish", "", flags)
