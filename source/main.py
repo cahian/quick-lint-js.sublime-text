@@ -15,22 +15,15 @@ class QuickLintJsBufferEventListener(BufferEventListener):
 
     def on_init(self):
         self.document = Document()
+        self.on_load_async()
 
     def on_exit(self):
         self.document.close()
 
     def on_load_async(self):
-        try:
-            views = self.buffer.views()
-            diagnostics = self.document.lint_from_buffer(self.buffer)
-            add_underlines(views, diagnostics)
-        except DocumentError as docerror:
-            try:
-                docerror.display_message()
-            except:
-                pass
-        finally:
-            remove_underlines()
+        views = self.buffer.views()
+        self.document.full_update(self.buffer)
+        self._show_underlines()
 
     def on_reload_async(self):
         self.on_load_async()
@@ -38,30 +31,16 @@ class QuickLintJsBufferEventListener(BufferEventListener):
     def on_revert_async(self):
         self.on_load_async()
 
+    def on_post_save_async(self):
+        self.on_load_async()
+
     def on_clone_async(self, view):
-        try:
-            diagnostics = self.document.lint_from_view(view)
-            add_underlines([view], diagnostics)
-        except DocumentError as docerror:
-            try:
-                docerror.display_message()
-            except:
-                pass
-        finally:
-            remove_underlines()
+        self._show_underlines()
 
     def on_text_changed_async(self, changes):
-        try:
-            views = self.buffer.views()
-            diagnostics = self.document.lint_from_changes(changes)
-            add_underlines(views, diagnostics)
-        except DocumentError as docerror:
-            try:
-                docerror.display_message()
-            except:
-                pass
-        finally:
-            remove_underlines()
+        views = self.buffer.views()
+        self.document.incremental_update(changes)
+        self._show_underlines()
 
     def on_hover(self, point, hover_zone):
         if hover_zone == HOVER_TEXT:
@@ -71,6 +50,18 @@ class QuickLintJsBufferEventListener(BufferEventListener):
                 # (region with underlines).
                 if diagnostic.region.contains(point):
                     add_popup(view, diagnostic)
+
+    def _show_underlines(self, views, diagnostics):
+        try:
+            diagnostics = self.document.lint()
+            add_underlines(views, diagnostics)
+        except DocumentError as docerror:
+            try:
+                docerror.display_message()
+            except:
+                pass
+        finally:
+            remove_underlines()
 
 
 # def on_init(buffers):

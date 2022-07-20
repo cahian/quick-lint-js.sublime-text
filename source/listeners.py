@@ -2,15 +2,7 @@
 default."""
 
 
-module_names = []
-module_names.append(__name__)
-
-
 class BufferEventListener:
-    pass
-
-
-class BufferEventListenersManager:
     pass
 
 

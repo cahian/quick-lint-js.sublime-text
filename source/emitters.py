@@ -9,46 +9,51 @@ from .listeners import BufferEventListener, get_listeners
 from .utilities import remove_duplicates
 
 
+# TODO: Don't forget about the is_applicable
+
+
 class BufferEventEmitter:
     listeners = get_listeners(BufferEventListener)
     instances = {}
 
     def on_init(self, buffers):
         for buffer in buffers:
-            id = buffer.id()
-            if not listeners[id]:
-                listeners[id] = BufferEventListener(buffer)
-                listeners[id].on_init()
+            for listener in listeners:
+                id = buffer.id()
+                instance = instances[listener]
+                if not instance[id]:
+                    instance[id] = listener(buffer)
+                    instance[id].on_init()
 
     def on_exit(self, buffer):
         id = buffer.id()
-        if listeners[id]:
-            listeners[id].on_exit()
-            del listeners[id]
+        if instances[id]:
+            instances[id].on_exit()
+            del instances[id]
 
     def on_load_async(self, buffer):
         id = buffer.id()
-        if not listeners[id]:
-            listeners[id] = BufferEventListener(buffer)
-        listeners[id].on_load_async()
+        if not instances[id]:
+            instances[id] = BufferEventListener(buffer)
+        instances[id].on_load_async()
 
     def on_clone_async(self, buffer, view):
         id = buffer.id()
-        if not listeners[id]:
-            listeners[id] = BufferEventListener(buffer)
-        listeners[id].on_clone_async(view)
+        if not instances[id]:
+            instances[id] = BufferEventListener(buffer)
+        instances[id].on_clone_async(view)
 
     def on_text_changed_async(self, buffer, changes):
         id = buffer.id()
-        if not listeners[id]:
-            listeners[id] = BufferEventListener(buffer)
-        listeners[id].on_text_changed_async(changes)
+        if not instances[id]:
+            instances[id] = BufferEventListener(buffer)
+        instances[id].on_text_changed_async(changes)
 
     def on_hover(self, buffer, point, hover_zone):
         id = buffer.id()
-        if not listeners[id]:
-            listeners[id] = BufferEventListener(buffer)
-        listeners[id].on_hover(point, hover_zone)
+        if not instances[id]:
+            instances[id] = BufferEventListener(buffer)
+        instances[id].on_hover(point, hover_zone)
 
 
 bee = BufferEventEmitter()
@@ -80,36 +85,24 @@ class EventEmitter(EventListener):
         buffer = view.buffer()
         bee.on_revert_async(buffer)
 
+    def on_post_save_async(self):
+        buffer = view.buffer()
+        bee.on_post_save_async(buffer)
+
     def on_clone_async(self, view):
         buffer = view.buffer()
         bee.on_clone_async(buffer, view)
-
-    def on_post_save_async(self):
-        buffer = view.buffer()
-        bee.on_post_save_async(self.view)
 
     def on_hover(self, view, point, hover_zone):
         buffer = view.buffer()
         bee.on_hover(buffer, view, point, hover_zone)
 
 
-class ViewEventEmitter(ViewEventListener):
-    # The Sublime Text will automatically filter the views with is_applicable.
-    # @classmethod
-    # def is_applicable(cls, settings):
-    #     return is_javascript(settings)
-
-
-
 class TextChangeEmitter(TextChangeListener):
-    # The Sublime Text will automatically filter the buffers with is_applicable.
-    @classmethod
-    def is_applicable(cls, buffer):
-        settings = buffer.primary_view().settings()
-        return is_javascript(settings)
-
     def on_text_changed_async(changes):
-        main.on_text_changed_async(this.buffer, changes)
+        bee.on_text_changed_async(this.buffer, changes)
+
+
 
 
     # We need to manually filter the views with is_applicable.
@@ -118,3 +111,24 @@ class TextChangeEmitter(TextChangeListener):
     #     return is_javascript(view.settings())
 
         # views = [view for view in views if self.is_applicable(view)]
+
+# class ViewEventEmitter(ViewEventListener):
+#     # The Sublime Text will automatically filter the views with is_applicable.
+#     # @classmethod
+#     # def is_applicable(cls, settings):
+#     #     return is_javascript(settings)
+
+
+    # The Sublime Text will automatically filter the buffers with is_applicable.
+    # @classmethod
+    # def is_applicable(cls, buffer):
+    #     settings = buffer.primary_view().settings()
+    #     return is_javascript(settings)
+
+
+    # def on_init(self, buffers):
+    #     for buffer in buffers:
+    #         id = buffer.id()
+    #         if not instances[id]:
+    #             instances[id] = BufferEventListener(buffer)
+    #             instances[id].on_init()
